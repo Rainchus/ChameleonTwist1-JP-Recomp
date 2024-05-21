@@ -1,0 +1,31 @@
+Step 1) Obtain an elf of the game by creating a "decomp project" (no decompiling actually needed) with splat and properly split out data that relates to overlays and correctly name the libultra symbols
+
+Splat can be found here: https://github.com/ethteck/splat
+
+Step 2) Creat a toml with at least the following info (more likely will need to be appended)
+
+	# Config file for Chameleon Twist 1 JP Recompilation.
+
+	[input]
+	entrypoint = 0x80025C00
+	# Paths are relative to the location of this config file.
+	elf_path = "chameleontwist.jp.elf"
+	output_func_path = "RecompiledFuncs"
+
+Step 3) Run N64Recomp.exe and pass the path to the toml as the arg. This will output the statically recompiled functions into the folder specified by output_func_path
+
+Step 4) Create an asp toml with the following information. The extra_indirect_branch_targets come from 0x10 to 0x30 as 2 bytes in aspMainDataStart
+
+	text_offset = 0xCAAC0
+	text_size = 0xE20
+	text_address = 0x04001080
+	rom_file_path = "chameleontwist.jp.z64"
+	output_file_path = "rsp/aspMain.cpp"
+	output_function_name = "aspMain"
+
+	extra_indirect_branch_targets = [
+		0x1118, 0x1470, 0x11DC, 0x1B38, 0x1214, 0x187C, 0x1254, 0x12D0,
+		0x12EC, 0x1328, 0x140C, 0x1294, 0x1E24, 0x138C, 0x170C, 0x144C
+	]
+
+Step 5) Run RSPRecomp.exe and pass the asp toml as the arg

@@ -1,0 +1,7 @@
+# Config file for Mario Party 1 US Recompilation.
+
+[input]
+entrypoint = 0x80025C00
+# Paths are relative to the location of this config file.
+elf_path = "chameleontwist.jp.elf"
+output_func_path = "RecompiledFuncs"
