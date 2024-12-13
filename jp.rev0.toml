@@ -5,3 +5,12 @@ entrypoint = 0x80025C00
 # Paths are relative to the location of this config file.
 elf_path = "chameleontwist.jp.elf"
 output_func_path = "RecompiledFuncs"
+
+manual_funcs = [
+    { name = "_bnkfPatchBank", section = ".main", vram = 0x800DCC10, size = 0xEC },
+    { name = "_sndpVoiceHandler", section = ".main", vram = 0x800DE2AC , size = 0x548 },
+    { name = "__CSPVoiceHandler", section = ".main", vram = 0x800DDA5C , size = 0x614 },
+    { name = "func_800dd22c", section = ".main", vram = 0x800dd22c , size = 0x828 },
+    { name = "func_800EAC9C", section = ".main", vram = 0x800EAC9C , size = 0x548 },
+    { name = "func_800EA954", section = ".main", vram = 0x800EA954 , size = 0x298 },
+]
