@@ -5,8 +5,8 @@
     {
       "type": "default",
       "project": "CMakeLists.txt",
-      "projectTarget": "Zelda64Recompiled.exe",
-      "name": "Zelda64Recompiled.exe",
+      "projectTarget": "ChameleonTwistJPRecompiled.exe",
+      "name": "ChameleonTwistJPRecompiled.exe",
       "currentDir": "${workspaceRoot}"
     }
   ]
