@@ -1,5 +1,5 @@
 # Chameleon Twist: Recompiled
-Chameleon Twist: Recompiled is a project that uses [N64: Recompiled](https://github.com/Mr-Wiseguy/N64Recomp) to **statically recompile** Chameleo Twist into a native port with many new features and enhancements. This project uses [RT64](https://github.com/rt64/rt64) as the rendering engine to provide some of these enhancements.
+Chameleon Twist: Recompiled is a project that uses [N64: Recompiled](https://github.com/Mr-Wiseguy/N64Recomp) to **statically recompile** Chameleon Twist into a native port with many new features and enhancements. This project uses [RT64](https://github.com/rt64/rt64) as the rendering engine to provide some of these enhancements.
 
 ### [Check out the latest release here](https://github.com/Rainchus/ChameleonTwist1-JP-Recomp/releases).
 
