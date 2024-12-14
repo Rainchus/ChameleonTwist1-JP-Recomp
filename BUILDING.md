@@ -1,10 +1,10 @@
 # Building Guide
 
-This guide will help you build the project on your local machine. The process will require you to provide a decompressed ROM of the US version of the game.
+This guide will help you build the project on your local machine. The process will require you to provide a ROM of the JP version of the game.
 
-These steps cover: decompressing the ROM, running the recompiler and finally building the project.
+These steps cover: running the recompiler and building the project.
 
-## 1. Clone the Zelda64Recomp Repository
+## 1. Clone the ChameleonTwist1-JP-Recomp Repository
 This project makes use of submodules so you will need to clone the repository with the `--recurse-submodules` flag.
 
 ```bash
@@ -35,25 +35,15 @@ The other tool necessary will be `make` which can be installe via [Chocolatey](h
 choco install make
 ```
 
-## 3. Decompressing the target ROM
-You will need to decompress the NTSC-U N64 Majora's Mask ROM (sha1: d6133ace5afaa0882cf214cf88daba39e266c078) before running the recompiler.
+## 3. Generating the C code
 
-There are a few tools that can do it:
-* This python script from the Majora's Mask decompilation project: https://github.com/zeldaret/mm/blob/main/tools/buildtools/decompress_baserom.py
-* https://github.com/z64tools/z64decompress
-
-Regardless of which method you use, copy the decompressed ROM to the root of the Zelda64Recomp repository with this filename:
-- `mm.us.rev1.rom_uncompressed.z64`
-
-## 4. Generating the C code
-
+You will need to place a Japanese ROM with the name `chameleontwist.jp.z64` in the root of the project
 Now that you have the required files, you must build [N64Recomp](https://github.com/Mr-Wiseguy/N64Recomp) and run it to generate the C code to be compiled. The building instructions can be found [here](https://github.com/Mr-Wiseguy/N64Recomp?tab=readme-ov-file#building). That will build the executables: `N64Recomp` and `RSPRecomp` which you should copy to the root of the Zelda64Recomp repository.
 
 After that, go back to the repository root, and run the following commands:
 ```bash
-./N64Recomp us.rev1.toml
+./N64Recomp jp.rev0.toml
 ./RSPRecomp aspMain.us.rev1.toml
-./RSPRecomp njpgdspMain.us.rev1.toml
 ```
 
 ## 5. Building the Project
@@ -71,7 +61,4 @@ cmake --build build-cmake --target Zelda64Recompiled -j$(nproc) --config Release
 
 ## 6. Success
 
-Voilà! You should now have a `Zelda64Recompiled` executable in the build directory! If you used Visual Studio this will be `out/build/x64-[Configuration]` and if you used the provided CMake commands then this will be `build-cmake`. You will need to run the executable out of the root folder of this project or copy the assets folder to the build folder to run it.
-
-> [!IMPORTANT]  
-> In the game itself, you should be using a standard ROM, not the decompressed one.
+Voilà! You should now have a `ChameleonTwistJPRecompiled` executable in the build directory! If you used Visual Studio this will be `out/build/x64-[Configuration]` and if you used the provided CMake commands then this will be `build-cmake`. You will need to run the executable out of the root folder of this project or copy the assets folder to the build folder to run it.
