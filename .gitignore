@@ -62,3 +62,6 @@ RSPRecomp
 
 # Controller mappings file
 gamecontrollerdb.txt
+
+# Temp files
+src/main/*TMP
