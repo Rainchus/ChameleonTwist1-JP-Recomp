@@ -17,7 +17,7 @@ namespace recomp {
     // x-macros to build input enums and arrays.
     // First parameter is the enum name, second parameter is the bit field for the input (or 0 if there is no associated one), third is the readable name.
     // TODO refactor this to allow projects to rename these, or get rid of the readable name and leave that up to individual projects to map.
-    #define DEFINE_N64_BUTTON_INPUTS() \
+#define DEFINE_N64_BUTTON_INPUTS() \
         DEFINE_INPUT(A, 0x8000, "Action") \
         DEFINE_INPUT(B, 0x4000, "Attack/Cancel") \
         DEFINE_INPUT(Z, 0x2000, "Target") \
@@ -33,24 +33,24 @@ namespace recomp {
         DEFINE_INPUT(DPAD_DOWN, 0x0400, "Special Item 3") \
         DEFINE_INPUT(DPAD_LEFT, 0x0200, "Special Item 4")
 
-    #define DEFINE_N64_AXIS_INPUTS() \
+#define DEFINE_N64_AXIS_INPUTS() \
         DEFINE_INPUT(Y_AXIS_POS, 0, "Up") \
         DEFINE_INPUT(Y_AXIS_NEG, 0, "Down") \
         DEFINE_INPUT(X_AXIS_NEG, 0, "Left") \
         DEFINE_INPUT(X_AXIS_POS, 0, "Right") \
 
-    #define DEFINE_RECOMP_UI_INPUTS() \
+#define DEFINE_RECOMP_UI_INPUTS() \
         DEFINE_INPUT(TOGGLE_MENU, 0, "Toggle Menu") \
         DEFINE_INPUT(ACCEPT_MENU, 0, "Accept (Menu)") \
         DEFINE_INPUT(APPLY_MENU, 0, "Apply (Menu)")
 
-    #define DEFINE_ALL_INPUTS() \
+#define DEFINE_ALL_INPUTS() \
         DEFINE_N64_BUTTON_INPUTS() \
         DEFINE_N64_AXIS_INPUTS() \
         DEFINE_RECOMP_UI_INPUTS()
 
     // Enum containing every recomp input.
-    #define DEFINE_INPUT(name, value, readable) name,
+#define DEFINE_INPUT(name, value, readable) name,
     enum class GameInput {
         DEFINE_ALL_INPUTS()
 
@@ -60,7 +60,7 @@ namespace recomp {
         N64_AXIS_START = X_AXIS_NEG,
         N64_AXIS_COUNT = Y_AXIS_POS - N64_AXIS_START + 1,
     };
-    #undef DEFINE_INPUT
+#undef DEFINE_INPUT
 
     struct InputField {
         uint32_t input_type;
@@ -91,7 +91,7 @@ namespace recomp {
     void config_menu_set_cont_or_kb(bool cont_interacted);
     InputField get_scanned_input();
     int get_scanned_input_index();
-    
+
     struct DefaultN64Mappings {
         std::vector<InputField> a;
         std::vector<InputField> b;
@@ -120,30 +120,31 @@ namespace recomp {
         std::vector<InputField> apply_menu;
     };
 
-    constexpr const std::vector<InputField>& get_default_mapping_for_input(const DefaultN64Mappings& defaults, const GameInput input) {
+    inline const std::vector<InputField>& get_default_mapping_for_input(const DefaultN64Mappings& defaults, const GameInput input) {
+        static const std::vector<InputField> empty_input_field{};
         switch (input) {
-            case GameInput::A: return defaults.a;
-            case GameInput::B: return defaults.b;
-            case GameInput::L: return defaults.l;
-            case GameInput::R: return defaults.r;
-            case GameInput::Z: return defaults.z;
-            case GameInput::START: return defaults.start;
-            case GameInput::C_LEFT: return defaults.c_left;
-            case GameInput::C_RIGHT: return defaults.c_right;
-            case GameInput::C_UP: return defaults.c_up;
-            case GameInput::C_DOWN: return defaults.c_down;
-            case GameInput::DPAD_LEFT: return defaults.dpad_left;
-            case GameInput::DPAD_RIGHT: return defaults.dpad_right;
-            case GameInput::DPAD_UP: return defaults.dpad_up;
-            case GameInput::DPAD_DOWN: return defaults.dpad_down;
-            case GameInput::X_AXIS_NEG: return defaults.analog_left;
-            case GameInput::X_AXIS_POS: return defaults.analog_right;
-            case GameInput::Y_AXIS_POS: return defaults.analog_up;
-            case GameInput::Y_AXIS_NEG: return defaults.analog_down;
-            case GameInput::TOGGLE_MENU: return defaults.toggle_menu;
-            case GameInput::ACCEPT_MENU: return defaults.accept_menu;
-            case GameInput::APPLY_MENU: return defaults.apply_menu;
-            default: return std::vector<InputField>();
+        case GameInput::A: return defaults.a;
+        case GameInput::B: return defaults.b;
+        case GameInput::L: return defaults.l;
+        case GameInput::R: return defaults.r;
+        case GameInput::Z: return defaults.z;
+        case GameInput::START: return defaults.start;
+        case GameInput::C_LEFT: return defaults.c_left;
+        case GameInput::C_RIGHT: return defaults.c_right;
+        case GameInput::C_UP: return defaults.c_up;
+        case GameInput::C_DOWN: return defaults.c_down;
+        case GameInput::DPAD_LEFT: return defaults.dpad_left;
+        case GameInput::DPAD_RIGHT: return defaults.dpad_right;
+        case GameInput::DPAD_UP: return defaults.dpad_up;
+        case GameInput::DPAD_DOWN: return defaults.dpad_down;
+        case GameInput::X_AXIS_NEG: return defaults.analog_left;
+        case GameInput::X_AXIS_POS: return defaults.analog_right;
+        case GameInput::Y_AXIS_POS: return defaults.analog_up;
+        case GameInput::Y_AXIS_NEG: return defaults.analog_down;
+        case GameInput::TOGGLE_MENU: return defaults.toggle_menu;
+        case GameInput::ACCEPT_MENU: return defaults.accept_menu;
+        case GameInput::APPLY_MENU: return defaults.apply_menu;
+        default: return empty_input_field;
         }
     }
 
@@ -165,11 +166,11 @@ namespace recomp {
     void handle_events();
 
     ultramodern::input::connected_device_info_t get_connected_device_info(int controller_num);
-    
+
     // Rumble strength ranges from 0 to 100.
     int get_rumble_strength();
     void set_rumble_strength(int strength);
-    
+
     // Gyro and mouse sensitivities range from 0 to 100.
     int get_gyro_sensitivity();
     int get_mouse_sensitivity();
@@ -183,13 +184,13 @@ namespace recomp {
     enum class BackgroundInputMode {
         On,
         Off,
-		OptionCount
+        OptionCount
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(recomp::BackgroundInputMode, {
         {recomp::BackgroundInputMode::On, "On"},
         {recomp::BackgroundInputMode::Off, "Off"}
-    });
+        });
 
     BackgroundInputMode get_background_input_mode();
     void set_background_input_mode(BackgroundInputMode mode);

@@ -1,5 +1,6 @@
 #include <memory>
 #include <cstring>
+#include <variant>
 
 #define HLSL_CPU
 #include "hle/rt64_application.h"
@@ -10,6 +11,13 @@
 
 #include "zelda_render.h"
 #include "recomp_ui.h"
+#include "concurrentqueue.h"
+
+// Helper class for variant visiting.
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
 static RT64::UserConfiguration::Antialiasing device_max_msaa = RT64::UserConfiguration::Antialiasing::None;
 static bool sample_positions_supported = false;
@@ -17,6 +25,18 @@ static bool high_precision_fb_enabled = false;
 
 static uint8_t DMEM[0x1000];
 static uint8_t IMEM[0x1000];
+
+struct TexturePackEnableAction {
+    std::filesystem::path path;
+};
+
+struct TexturePackDisableAction {
+    std::filesystem::path path;
+};
+
+using TexturePackAction = std::variant<TexturePackEnableAction, TexturePackDisableAction>;
+
+static moodycamel::ConcurrentQueue<TexturePackAction> texture_pack_action_queue;
 
 unsigned int MI_INTR_REG = 0;
 
@@ -61,89 +81,89 @@ RT64::UserConfiguration::Antialiasing compute_max_supported_aa(RT64::RenderSampl
 
 RT64::UserConfiguration::AspectRatio to_rt64(ultramodern::renderer::AspectRatio option) {
     switch (option) {
-        case ultramodern::renderer::AspectRatio::Original:
-            return RT64::UserConfiguration::AspectRatio::Original;
-        case ultramodern::renderer::AspectRatio::Expand:
-            return RT64::UserConfiguration::AspectRatio::Expand;
-        case ultramodern::renderer::AspectRatio::Manual:
-            return RT64::UserConfiguration::AspectRatio::Manual;
-        case ultramodern::renderer::AspectRatio::OptionCount:
-            return RT64::UserConfiguration::AspectRatio::OptionCount;
+    case ultramodern::renderer::AspectRatio::Original:
+        return RT64::UserConfiguration::AspectRatio::Original;
+    case ultramodern::renderer::AspectRatio::Expand:
+        return RT64::UserConfiguration::AspectRatio::Expand;
+    case ultramodern::renderer::AspectRatio::Manual:
+        return RT64::UserConfiguration::AspectRatio::Manual;
+    case ultramodern::renderer::AspectRatio::OptionCount:
+        return RT64::UserConfiguration::AspectRatio::OptionCount;
     }
 }
 
 RT64::UserConfiguration::Antialiasing to_rt64(ultramodern::renderer::Antialiasing option) {
     switch (option) {
-        case ultramodern::renderer::Antialiasing::None:
-            return RT64::UserConfiguration::Antialiasing::None;
-        case ultramodern::renderer::Antialiasing::MSAA2X:
-            return RT64::UserConfiguration::Antialiasing::MSAA2X;
-        case ultramodern::renderer::Antialiasing::MSAA4X:
-            return RT64::UserConfiguration::Antialiasing::MSAA4X;
-        case ultramodern::renderer::Antialiasing::MSAA8X:
-            return RT64::UserConfiguration::Antialiasing::MSAA8X;
-        case ultramodern::renderer::Antialiasing::OptionCount:
-            return RT64::UserConfiguration::Antialiasing::OptionCount;
+    case ultramodern::renderer::Antialiasing::None:
+        return RT64::UserConfiguration::Antialiasing::None;
+    case ultramodern::renderer::Antialiasing::MSAA2X:
+        return RT64::UserConfiguration::Antialiasing::MSAA2X;
+    case ultramodern::renderer::Antialiasing::MSAA4X:
+        return RT64::UserConfiguration::Antialiasing::MSAA4X;
+    case ultramodern::renderer::Antialiasing::MSAA8X:
+        return RT64::UserConfiguration::Antialiasing::MSAA8X;
+    case ultramodern::renderer::Antialiasing::OptionCount:
+        return RT64::UserConfiguration::Antialiasing::OptionCount;
     }
 }
 
 RT64::UserConfiguration::RefreshRate to_rt64(ultramodern::renderer::RefreshRate option) {
     switch (option) {
-        case ultramodern::renderer::RefreshRate::Original:
-            return RT64::UserConfiguration::RefreshRate::Original;
-        case ultramodern::renderer::RefreshRate::Display:
-            return RT64::UserConfiguration::RefreshRate::Display;
-        case ultramodern::renderer::RefreshRate::Manual:
-            return RT64::UserConfiguration::RefreshRate::Manual;
-        case ultramodern::renderer::RefreshRate::OptionCount:
-            return RT64::UserConfiguration::RefreshRate::OptionCount;
+    case ultramodern::renderer::RefreshRate::Original:
+        return RT64::UserConfiguration::RefreshRate::Original;
+    case ultramodern::renderer::RefreshRate::Display:
+        return RT64::UserConfiguration::RefreshRate::Display;
+    case ultramodern::renderer::RefreshRate::Manual:
+        return RT64::UserConfiguration::RefreshRate::Manual;
+    case ultramodern::renderer::RefreshRate::OptionCount:
+        return RT64::UserConfiguration::RefreshRate::OptionCount;
     }
 }
 
 RT64::UserConfiguration::InternalColorFormat to_rt64(ultramodern::renderer::HighPrecisionFramebuffer option) {
     switch (option) {
-        case ultramodern::renderer::HighPrecisionFramebuffer::Off:
-            return RT64::UserConfiguration::InternalColorFormat::Standard;
-        case ultramodern::renderer::HighPrecisionFramebuffer::On:
-            return RT64::UserConfiguration::InternalColorFormat::High;
-        case ultramodern::renderer::HighPrecisionFramebuffer::Auto:
-            return RT64::UserConfiguration::InternalColorFormat::Automatic;
-        case ultramodern::renderer::HighPrecisionFramebuffer::OptionCount:
-            return RT64::UserConfiguration::InternalColorFormat::OptionCount;
+    case ultramodern::renderer::HighPrecisionFramebuffer::Off:
+        return RT64::UserConfiguration::InternalColorFormat::Standard;
+    case ultramodern::renderer::HighPrecisionFramebuffer::On:
+        return RT64::UserConfiguration::InternalColorFormat::High;
+    case ultramodern::renderer::HighPrecisionFramebuffer::Auto:
+        return RT64::UserConfiguration::InternalColorFormat::Automatic;
+    case ultramodern::renderer::HighPrecisionFramebuffer::OptionCount:
+        return RT64::UserConfiguration::InternalColorFormat::OptionCount;
     }
 }
 
 void set_application_user_config(RT64::Application* application, const ultramodern::renderer::GraphicsConfig& config) {
     switch (config.res_option) {
-        default:
-        case ultramodern::renderer::Resolution::Auto:
-            application->userConfig.resolution = RT64::UserConfiguration::Resolution::WindowIntegerScale;
-            application->userConfig.downsampleMultiplier = 1;
-            break;
-        case ultramodern::renderer::Resolution::Original:
-            application->userConfig.resolution = RT64::UserConfiguration::Resolution::Manual;
-            application->userConfig.resolutionMultiplier = std::max(config.ds_option, 1);
-            application->userConfig.downsampleMultiplier = std::max(config.ds_option, 1);
-            break;
-        case ultramodern::renderer::Resolution::Original2x:
-            application->userConfig.resolution = RT64::UserConfiguration::Resolution::Manual;
-            application->userConfig.resolutionMultiplier = 2.0 * std::max(config.ds_option, 1);
-            application->userConfig.downsampleMultiplier = std::max(config.ds_option, 1);
-            break;
+    default:
+    case ultramodern::renderer::Resolution::Auto:
+        application->userConfig.resolution = RT64::UserConfiguration::Resolution::WindowIntegerScale;
+        application->userConfig.downsampleMultiplier = 1;
+        break;
+    case ultramodern::renderer::Resolution::Original:
+        application->userConfig.resolution = RT64::UserConfiguration::Resolution::Manual;
+        application->userConfig.resolutionMultiplier = std::max(config.ds_option, 1);
+        application->userConfig.downsampleMultiplier = std::max(config.ds_option, 1);
+        break;
+    case ultramodern::renderer::Resolution::Original2x:
+        application->userConfig.resolution = RT64::UserConfiguration::Resolution::Manual;
+        application->userConfig.resolutionMultiplier = 2.0 * std::max(config.ds_option, 1);
+        application->userConfig.downsampleMultiplier = std::max(config.ds_option, 1);
+        break;
     }
 
     switch (config.hr_option) {
-        default:
-        case ultramodern::renderer::HUDRatioMode::Original:
-            application->userConfig.extAspectRatio = RT64::UserConfiguration::AspectRatio::Original;
-            break;
-        case ultramodern::renderer::HUDRatioMode::Clamp16x9:
-            application->userConfig.extAspectRatio = RT64::UserConfiguration::AspectRatio::Manual;
-            application->userConfig.extAspectTarget = 16.0/9.0;
-            break;
-        case ultramodern::renderer::HUDRatioMode::Full:
-            application->userConfig.extAspectRatio = RT64::UserConfiguration::AspectRatio::Expand;
-            break;
+    default:
+    case ultramodern::renderer::HUDRatioMode::Original:
+        application->userConfig.extAspectRatio = RT64::UserConfiguration::AspectRatio::Original;
+        break;
+    case ultramodern::renderer::HUDRatioMode::Clamp16x9:
+        application->userConfig.extAspectRatio = RT64::UserConfiguration::AspectRatio::Manual;
+        application->userConfig.extAspectTarget = 16.0 / 9.0;
+        break;
+    case ultramodern::renderer::HUDRatioMode::Full:
+        application->userConfig.extAspectRatio = RT64::UserConfiguration::AspectRatio::Expand;
+        break;
     }
 
     application->userConfig.aspectRatio = to_rt64(config.ar_option);
@@ -155,16 +175,16 @@ void set_application_user_config(RT64::Application* application, const ultramode
 
 ultramodern::renderer::SetupResult map_setup_result(RT64::Application::SetupResult rt64_result) {
     switch (rt64_result) {
-        case RT64::Application::SetupResult::Success:
-            return ultramodern::renderer::SetupResult::Success;
-        case RT64::Application::SetupResult::DynamicLibrariesNotFound:
-            return ultramodern::renderer::SetupResult::DynamicLibrariesNotFound;
-        case RT64::Application::SetupResult::InvalidGraphicsAPI:
-            return ultramodern::renderer::SetupResult::InvalidGraphicsAPI;
-        case RT64::Application::SetupResult::GraphicsAPINotFound:
-            return ultramodern::renderer::SetupResult::GraphicsAPINotFound;
-        case RT64::Application::SetupResult::GraphicsDeviceNotFound:
-            return ultramodern::renderer::SetupResult::GraphicsDeviceNotFound;
+    case RT64::Application::SetupResult::Success:
+        return ultramodern::renderer::SetupResult::Success;
+    case RT64::Application::SetupResult::DynamicLibrariesNotFound:
+        return ultramodern::renderer::SetupResult::DynamicLibrariesNotFound;
+    case RT64::Application::SetupResult::InvalidGraphicsAPI:
+        return ultramodern::renderer::SetupResult::InvalidGraphicsAPI;
+    case RT64::Application::SetupResult::GraphicsAPINotFound:
+        return ultramodern::renderer::SetupResult::GraphicsAPINotFound;
+    case RT64::Application::SetupResult::GraphicsDeviceNotFound:
+        return ultramodern::renderer::SetupResult::GraphicsDeviceNotFound;
     }
 
     fprintf(stderr, "Unhandled `RT64::Application::SetupResult` ?\n");
@@ -240,16 +260,16 @@ zelda64::renderer::RT64Context::RT64Context(uint8_t* rdram, ultramodern::rendere
     app->enhancementConfig.textureLOD.scale = true;
     // Pick an API if the user has set an override.
     switch (cur_config.api_option) {
-        case ultramodern::renderer::GraphicsApi::D3D12:
-            app->userConfig.graphicsAPI = RT64::UserConfiguration::GraphicsAPI::D3D12;
-            break;
-        case ultramodern::renderer::GraphicsApi::Vulkan:
-            app->userConfig.graphicsAPI = RT64::UserConfiguration::GraphicsAPI::Vulkan;
-            break;
-        default:
-        case ultramodern::renderer::GraphicsApi::Auto:
-            // Don't override if auto is selected.
-            break;
+    case ultramodern::renderer::GraphicsApi::D3D12:
+        app->userConfig.graphicsAPI = RT64::UserConfiguration::GraphicsAPI::D3D12;
+        break;
+    case ultramodern::renderer::GraphicsApi::Vulkan:
+        app->userConfig.graphicsAPI = RT64::UserConfiguration::GraphicsAPI::Vulkan;
+        break;
+    default:
+    case ultramodern::renderer::GraphicsApi::Auto:
+        // Don't override if auto is selected.
+        break;
     }
 
     // Set up the RT64 application.
@@ -286,6 +306,32 @@ zelda64::renderer::RT64Context::RT64Context(uint8_t* rdram, ultramodern::rendere
 zelda64::renderer::RT64Context::~RT64Context() = default;
 
 void zelda64::renderer::RT64Context::send_dl(const OSTask* task) {
+    bool packs_disabled = false;
+    TexturePackAction cur_action;
+    while (texture_pack_action_queue.try_dequeue(cur_action)) {
+        std::visit(overloaded{
+            [&](TexturePackDisableAction& to_disable) {
+                enabled_texture_packs.erase(to_disable.path);
+                packs_disabled = true;
+            },
+            [&](TexturePackEnableAction& to_enable) {
+                enabled_texture_packs.insert(to_enable.path);
+                // Load the pack now if no packs have been disabled.
+                if (!packs_disabled) {
+                    app->textureCache->loadReplacementDirectory(to_enable.path);
+                }
+            }
+            }, cur_action);
+    }
+
+    // If any packs were disabled, unload all packs and load all the active ones.
+    if (packs_disabled) {
+        app->textureCache->clearReplacementDirectories();
+        for (const std::filesystem::path& cur_pack_path : enabled_texture_packs) {
+            app->textureCache->loadReplacementDirectory(cur_pack_path);
+        }
+    }
+
     app->state->rsp->reset();
     app->interpreter->loadUCodeGBI(task->t.ucode & 0x3FFFFFF, task->t.ucode_data & 0x3FFFFFF, true);
     app->processDisplayLists(app->core.RDRAM, task->t.data_ptr & 0x3FFFFFF, 0, true);
@@ -336,28 +382,18 @@ uint32_t zelda64::renderer::RT64Context::get_display_framerate() const {
 float zelda64::renderer::RT64Context::get_resolution_scale() const {
     constexpr int ReferenceHeight = 240;
     switch (app->userConfig.resolution) {
-        case RT64::UserConfiguration::Resolution::WindowIntegerScale:
-            if (app->sharedQueueResources->swapChainHeight > 0) {
-                return std::max(float((app->sharedQueueResources->swapChainHeight + ReferenceHeight - 1) / ReferenceHeight), 1.0f);
-            }
-            else {
-                return 1.0f;
-            }
-        case RT64::UserConfiguration::Resolution::Manual:
-            return float(app->userConfig.resolutionMultiplier);
-        case RT64::UserConfiguration::Resolution::Original:
-        default:
+    case RT64::UserConfiguration::Resolution::WindowIntegerScale:
+        if (app->sharedQueueResources->swapChainHeight > 0) {
+            return std::max(float((app->sharedQueueResources->swapChainHeight + ReferenceHeight - 1) / ReferenceHeight), 1.0f);
+        }
+        else {
             return 1.0f;
-    }
-}
-
-void zelda64::renderer::RT64Context::load_shader_cache(std::span<const char> cache_binary) {
-    // TODO figure out how to avoid a copy here.
-    std::istringstream cache_stream{std::string{cache_binary.data(), cache_binary.size()}};
-
-    if (!app->rasterShaderCache->loadOfflineList(cache_stream)) {
-       printf("Failed to preload shader cache!\n");
-       assert(false);
+        }
+    case RT64::UserConfiguration::Resolution::Manual:
+        return float(app->userConfig.resolutionMultiplier);
+    case RT64::UserConfiguration::Resolution::Original:
+    default:
+        return 1.0f;
     }
 }
 
@@ -375,4 +411,12 @@ bool zelda64::renderer::RT64SamplePositionsSupported() {
 
 bool zelda64::renderer::RT64HighPrecisionFBEnabled() {
     return high_precision_fb_enabled;
+}
+
+void zelda64::renderer::enable_texture_pack(const recomp::mods::ModHandle& mod) {
+    texture_pack_action_queue.enqueue(TexturePackEnableAction{ mod.manifest.mod_root_path });
+}
+
+void zelda64::renderer::disable_texture_pack(const recomp::mods::ModHandle& mod) {
+    texture_pack_action_queue.enqueue(TexturePackDisableAction{ mod.manifest.mod_root_path });
 }

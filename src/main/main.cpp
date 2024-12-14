@@ -27,6 +27,7 @@
 #include "zelda_render.h"
 #include "ovl_patches.hpp"
 #include "librecomp/game.hpp"
+#include "librecomp/mods.hpp"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -35,6 +36,8 @@
 #endif
 
 #include "../../lib/rt64/src/contrib/stb/stb_image.h"
+
+const std::string version_string = "1.2.0-dev";
 
 template<typename... Ts>
 void exit_error(const char* str, Ts ...args) {
@@ -95,16 +98,17 @@ bool SetImageAsIcon(const char* filename, SDL_Window* window)
     SDL_Surface* surface = nullptr;
     if (data != nullptr) {
         surface = SDL_CreateRGBSurfaceFrom(data, width, height, 32, pitch, Rmask, Gmask,
-                            Bmask, Amask);
+            Bmask, Amask);
     }
 
-    if (surface == nullptr) {   
+    if (surface == nullptr) {
         if (data != nullptr) {
             stbi_image_free(data);
         }
         return false;
-	} else {
-        SDL_SetWindowIcon(window,surface);
+    }
+    else {
+        SDL_SetWindowIcon(window, surface);
         SDL_FreeSurface(surface);
         stbi_image_free(data);
         return true;
@@ -115,13 +119,14 @@ bool SetImageAsIcon(const char* filename, SDL_Window* window)
 SDL_Window* window;
 
 ultramodern::renderer::WindowHandle create_window(ultramodern::gfx_callbacks_t::gfx_data_t) {
-    window = SDL_CreateWindow("Chameleon Twist: Recompiled", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 960, SDL_WINDOW_RESIZABLE );
+    window = SDL_CreateWindow("Chameleon Twist: Recompiled", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1600, 960, SDL_WINDOW_RESIZABLE);
 #if defined(__linux__)
-    SetImageAsIcon("icons/512.png",window);
+    SetImageAsIcon("icons/512.png", window);
     if (ultramodern::renderer::get_graphics_config().wm_option == ultramodern::renderer::WindowMode::Fullscreen) { // TODO: Remove once RT64 gets native fullscreen support on Linux
-        SDL_SetWindowFullscreen(window,SDL_WINDOW_FULLSCREEN_DESKTOP);
-    } else {
-        SDL_SetWindowFullscreen(window,0);
+        SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    }
+    else {
+        SDL_SetWindowFullscreen(window, 0);
     }
 #endif
 
@@ -175,7 +180,7 @@ void queue_samples(int16_t* audio_data, size_t sample_count) {
     // Buffer for holding the output of swapping the audio channels. This is reused across
     // calls to reduce runtime allocations.
     static std::vector<float> swap_buffer;
-    static std::array<float, duplicated_input_frames * input_channels> duplicated_sample_buffer;
+    static std::array<float, duplicated_input_frames* input_channels> duplicated_sample_buffer;
 
     // Make sure the swap buffer is large enough to hold the audio data, including any extra space needed for resampling.
     size_t resampled_sample_count = sample_count + duplicated_input_frames * input_channels;
@@ -183,7 +188,7 @@ void queue_samples(int16_t* audio_data, size_t sample_count) {
     if (max_sample_count > swap_buffer.size()) {
         swap_buffer.resize(max_sample_count);
     }
-    
+
     // Copy the duplicated frames from last chunk into this chunk
     for (size_t i = 0; i < duplicated_input_frames * input_channels; i++) {
         swap_buffer[i] = duplicated_sample_buffer[i];
@@ -196,7 +201,7 @@ void queue_samples(int16_t* audio_data, size_t sample_count) {
         swap_buffer[i + 0 + duplicated_input_frames * input_channels] = audio_data[i + 1] * (0.5f / 32768.0f) * cur_main_volume;
         swap_buffer[i + 1 + duplicated_input_frames * input_channels] = audio_data[i + 0] * (0.5f / 32768.0f) * cur_main_volume;
     }
-    
+
     // TODO handle cases where a chunk is smaller than the duplicated frame count.
     assert(sample_count > duplicated_input_frames * input_channels);
 
@@ -204,7 +209,7 @@ void queue_samples(int16_t* audio_data, size_t sample_count) {
     for (size_t i = 0; i < duplicated_input_frames * input_channels; i++) {
         duplicated_sample_buffer[i] = swap_buffer[i + sample_count];
     }
-    
+
     audio_convert.buf = reinterpret_cast<Uint8*>(swap_buffer.data());
     audio_convert.len = (sample_count + duplicated_input_frames * input_channels) * sizeof(swap_buffer[0]);
 
@@ -273,7 +278,7 @@ void update_audio_converter() {
 
 void set_frequency(uint32_t freq) {
     sample_rate = freq;
-    
+
     update_audio_converter();
 }
 
@@ -327,6 +332,7 @@ std::vector<recomp::GameEntry> supported_games = {
         .rom_hash = 0x0ff1b3a34ee3fb82ULL,
         .internal_name = "Chameleon Twist",
         .game_id = u8"ChameleonTwistJP",
+        .save_type = recomp::SaveType::Eep4k,
         .is_enabled = true,
         .entrypoint_address = get_entrypoint_address(),
         .entrypoint = recomp_entrypoint,
@@ -339,77 +345,77 @@ namespace zelda64 {
         std::string name = "[Game] ";
 
         switch (t->id) {
-            case 0:
-                switch (t->priority) {
-                    case 150:
-                        name += "PIMGR";
-                        break;
-
-                    case 254:
-                        name += "VIMGR";
-                        break;
-
-                    default:
-                        name += std::to_string(t->id);
-                        break;
-                }
+        case 0:
+            switch (t->priority) {
+            case 150:
+                name += "PIMGR";
                 break;
 
-            case 1:
-                name += "IDLE";
-                break;
-
-            case 2:
-                switch (t->priority) {
-                    case 5:
-                        name += "SLOWLY";
-                        break;
-
-                    case 127:
-                        name += "FAULT";
-                        break;
-
-                    default:
-                        name += std::to_string(t->id);
-                        break;
-                }
-                break;
-
-            case 3:
-                name += "MAIN";
-                break;
-
-            case 4:
-                name += "GRAPH";
-                break;
-
-            case 5:
-                name += "SCHED";
-                break;
-
-            case 7:
-                name += "PADMGR";
-                break;
-
-            case 10:
-                name += "AUDIOMGR";
-                break;
-
-            case 13:
-                name += "FLASHROM";
-                break;
-
-            case 18:
-                name += "DMAMGR";
-                break;
-
-            case 19:
-                name += "IRQMGR";
+            case 254:
+                name += "VIMGR";
                 break;
 
             default:
                 name += std::to_string(t->id);
                 break;
+            }
+            break;
+
+        case 1:
+            name += "IDLE";
+            break;
+
+        case 2:
+            switch (t->priority) {
+            case 5:
+                name += "SLOWLY";
+                break;
+
+            case 127:
+                name += "FAULT";
+                break;
+
+            default:
+                name += std::to_string(t->id);
+                break;
+            }
+            break;
+
+        case 3:
+            name += "MAIN";
+            break;
+
+        case 4:
+            name += "GRAPH";
+            break;
+
+        case 5:
+            name += "SCHED";
+            break;
+
+        case 7:
+            name += "PADMGR";
+            break;
+
+        case 10:
+            name += "AUDIOMGR";
+            break;
+
+        case 13:
+            name += "FLASHROM";
+            break;
+
+        case 18:
+            name += "DMAMGR";
+            break;
+
+        case 19:
+            name += "IRQMGR";
+            break;
+
+        default:
+            name += std::to_string(t->id);
+            break;
         }
 
         return name;
@@ -497,7 +503,7 @@ bool preload_executable(PreloadContext& context) {
         context = {};
         return false;
     }
-    
+
     return true;
 }
 
@@ -524,7 +530,23 @@ void release_preload(PreloadContext& context) {
 
 #endif
 
+void enable_texture_pack(recomp::mods::ModContext& context, const recomp::mods::ModHandle& mod) {
+    (void)context;
+    zelda64::renderer::enable_texture_pack(mod);
+}
+
+void disable_texture_pack(recomp::mods::ModContext& context, const recomp::mods::ModHandle& mod) {
+    (void)context;
+    zelda64::renderer::disable_texture_pack(mod);
+}
+
 int main(int argc, char** argv) {
+    recomp::Version project_version{};
+    if (!recomp::Version::from_string(version_string, project_version)) {
+        ultramodern::error_handling::message_box(("Invalid version string: " + version_string).c_str());
+        return EXIT_FAILURE;
+    }
+
     // Map this executable into memory and lock it, which should keep it in physical memory. This ensures
     // that there are no stutters from the OS having to load new pages of the executable whenever a new code page is run.
     PreloadContext preload_context;
@@ -568,6 +590,8 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Failed to load controller mappings: %s\n", SDL_GetError());
     }
 
+    recomp::register_config_path(zelda64::get_app_folder_path());
+
     // Register supported games and patches
     for (const auto& game : supported_games) {
         recomp::register_game(game);
@@ -575,8 +599,6 @@ int main(int argc, char** argv) {
 
     zelda64::register_overlays();
     zelda64::register_patches();
-
-    recomp::register_config_path(zelda64::get_app_folder_path());
     zelda64::load_config();
 
     recomp::rsp::callbacks_t rsp_callbacks{
@@ -619,7 +641,47 @@ int main(int argc, char** argv) {
         .get_game_thread_name = zelda64::get_game_thread_name,
     };
 
+    // Register the texture pack content type with rt64.json as its content file.
+    recomp::mods::ModContentType texture_pack_content_type{
+        .content_filename = "rt64.json",
+        .allow_runtime_toggle = true,
+        .on_enabled = enable_texture_pack,
+        .on_disabled = disable_texture_pack,
+    };
+    auto texture_pack_content_type_id = recomp::mods::register_mod_content_type(texture_pack_content_type);
+
+    // Register the .rtz texture pack file format with the previous content type as its only allowed content type.
+    recomp::mods::register_mod_container_type("rtz", std::vector{ texture_pack_content_type_id }, false);
+
+    recomp::mods::scan_mods();
+
+    printf("Found mods:\n");
+    for (const auto& mod : recomp::mods::get_mod_details("mm")) {
+        printf("  %s(%s)\n", mod.mod_id.c_str(), mod.version.to_string().c_str());
+        if (!mod.authors.empty()) {
+            printf("    Authors: %s", mod.authors[0].c_str());
+            for (size_t author_index = 1; author_index < mod.authors.size(); author_index++) {
+                const std::string& author = mod.authors[author_index];
+                printf(", %s", author.c_str());
+            }
+            printf("\n");
+            printf("    Runtime toggleable: %d\n", mod.runtime_toggleable);
+        }
+        if (!mod.dependencies.empty()) {
+            printf("    Dependencies: %s:%s", mod.dependencies[0].mod_id.c_str(), mod.dependencies[0].version.to_string().c_str());
+            for (size_t dep_index = 1; dep_index < mod.dependencies.size(); dep_index++) {
+                const recomp::mods::Dependency& dep = mod.dependencies[dep_index];
+                printf(", %s:%s", dep.mod_id.c_str(), dep.version.to_string().c_str());
+            }
+            printf("\n");
+        }
+        // TODO load all mods as a temporary solution to not having a UI yet.
+        recomp::mods::enable_mod(mod.mod_id, true);
+    }
+    printf("\n");
+
     recomp::start(
+        project_version,
         {},
         rsp_callbacks,
         renderer_callbacks,
