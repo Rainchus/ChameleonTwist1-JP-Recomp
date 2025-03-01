@@ -296,7 +296,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 target_link_libraries(ChameleonTwistJPRecompiled PRIVATE
-    # PatchesLib
+    PatchesLib
     RecompiledFuncs
     SDL2
     librecomp
