@@ -22,3 +22,6 @@
 [submodule "lib/ct1jp"]
 	path = lib/ct1jp
 	url = https://github.com/chameleonTwistRet/chameleonTwistv1.0-JP.git
+[submodule "ChameleonTwistJPSyms"]
+	path = ChameleonTwistJPSyms
+	url = https://github.com/Rainchus/ChameleonTwistJPSyms.git
