@@ -20,4 +20,4 @@ output_binary_path = "patches/patches.bin"
 # Do not emit warnings for unpaired LO16 values, as clang produces many of them.
 unpaired_lo16_warnings = false
 
-strict_patch_mode = false
+strict_patch_mode = true
