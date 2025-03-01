@@ -1,4 +1,10 @@
 #include "patches.h"
+#include "misc_funcs.h"
+
+#define va_list __builtin_va_list
+#define va_start __builtin_va_start
+#define va_arg __builtin_va_arg
+#define va_end __builtin_va_end
 
 int dummyData = 0;
 int dummyBss;
@@ -8,17 +14,12 @@ void dummyFunc(void)
     return;
 }
 
-#if 0
-RECOMP_PATCH void Sched_StartThread(void) {
-    *(volatile int*) 0 = 0;
-}
-#endif
+typedef unsigned int size_t;
+typedef char *outfun(char*,const char*,size_t);
 
-#if 0
-#include "patches.h"
-#include "misc_funcs.h"
+int _Printf(outfun prout, char *arg, const char *fmt, va_list args);
 
-void* proutPrintf(void* dst, const char* fmt, size_t size) {
+char* proutPrintf(char* dst, const char* fmt, size_t size) {
     recomp_puts(fmt, size);
     return (void*)1;
 }
@@ -33,5 +34,3 @@ int recomp_printf(const char* fmt, ...) {
 
     return ret;
 }
-
-#endif
