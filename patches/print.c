@@ -1,4 +1,21 @@
 #include "patches.h"
+
+int dummyData = 0;
+int dummyBss;
+
+void dummyFunc(void)
+{
+    return;
+}
+
+#if 0
+RECOMP_PATCH void Sched_StartThread(void) {
+    *(volatile int*) 0 = 0;
+}
+#endif
+
+#if 0
+#include "patches.h"
 #include "misc_funcs.h"
 
 void* proutPrintf(void* dst, const char* fmt, size_t size) {
@@ -16,3 +33,5 @@ int recomp_printf(const char* fmt, ...) {
 
     return ret;
 }
+
+#endif
