@@ -25,7 +25,7 @@
 #define cosf __cosf_recomp
 #define bzero bzero_recomp
 #define gRandFloat sRandFloat
-#include "global.h"
+// #include "global.h"
 #include "rt64_extended_gbi.h"
 
 #ifndef gEXFillRectangle
@@ -92,12 +92,7 @@ void draw_dpad_icons(PlayState* play);
 
 void View_ApplyInterpolate(View* view, s32 mask, bool reset_interpolation_state);
 
-void set_camera_skipped(bool skipped);
 void clear_camera_skipped();
-void edit_billboard_groups(PlayState* play);
-bool camera_was_skipped();
-void room_load_hook(PlayState* play, Room* room);
-void draw_autosave_icon(PlayState* play);
 
 void recomp_crash(const char* err);
 
