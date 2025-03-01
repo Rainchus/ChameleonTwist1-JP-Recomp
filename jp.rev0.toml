@@ -3,7 +3,9 @@
 [input]
 entrypoint = 0x80025C00
 # Paths are relative to the location of this config file.
-elf_path = "chameleontwist.jp.elf"
+# elf_path = "chameleontwist.jp.elf"
+symbols_file_path = "ChameleonTwistJPSyms/dump.toml"
+rom_file_path = "baserom.jp.z64"
 output_func_path = "RecompiledFuncs"
 
 manual_funcs = [

@@ -2,7 +2,7 @@
 #include <mutex>
 
 #include "ultramodern/ultramodern.hpp"
-#include "librecomp/recomp.h"
+#include "recomp.h"
 #include "recomp_input.h"
 #include "zelda_config.h"
 #include "recomp_ui.h"
@@ -160,7 +160,8 @@ bool sdl_event_filter(void* userdata, SDL_Event* event) {
             recompui::set_current_menu(recompui::Menu::Config);
         }
 
-        zelda64::open_quit_game_prompt();
+        // zelda64::open_quit_game_prompt();
+        ultramodern::quit();
         recompui::activate_mouse();
         break;
     }
