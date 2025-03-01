@@ -37,8 +37,8 @@ choco install make
 
 ## 3. Generating the C code
 
-You will need to place a Japanese ROM with the name `chameleontwist.jp.z64` in the root of the project
-Now that you have the required files, you must build the live-recomp branch of [N64Recomp](https://github.com/N64Recomp/N64Recomp/tree/live-recomp) and run it to generate the C code to be compiled. The building instructions can be found [here](https://github.com/Mr-Wiseguy/N64Recomp?tab=readme-ov-file#building). That will build the executables: `N64Recomp` and `RSPRecomp` which you should copy to the root of the Zelda64Recomp repository.
+You will need to place a Japanese ROM with the name `baserom.jp.z64` in the root of the project
+Now that you have the required files, you must build the live-recomp branch of [N64Recomp](https://github.com/N64Recomp/N64Recomp/tree/live-recomp) and run it to generate the C code to be compiled. The building instructions can be found [here](https://github.com/Mr-Wiseguy/N64Recomp?tab=readme-ov-file#building). That will build the executables: `N64Recomp` and `RSPRecomp` which you should copy to the root of the ChameleonTwist1-JP-Recomp repository.
 
 After that, go back to the repository root, and run the following commands:
 ```bash
@@ -46,12 +46,7 @@ After that, go back to the repository root, and run the following commands:
 ./RSPRecomp aspMain.us.rev1.toml
 ```
 
-## 4. Temporary Step
-  Copy [this version](https://github.com/N64Recomp/N64Recomp/blob/live-recomp/include/recomp.h) of `recomp.h` to `lib/N64ModernRuntime/librecomp/include/librecomp/recomp.h`<br/>
-  Soon this will not be required
-  
-
-## 5. Building the Project
+## 4. Building the Project
 
 Finally, you can build the project! :rocket:
 
@@ -61,7 +56,7 @@ If you prefer the command line or you're on a Unix platform you can build the pr
 
 ```bash
 cmake -S . -B build-cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -G Ninja -DCMAKE_BUILD_TYPE=Release # or Debug if you want to debug
-cmake --build build-cmake --target Zelda64Recompiled -j$(nproc) --config Release # or Debug
+cmake --build build-cmake --target ChameleonTwistJPRecompiled -j$(nproc) --config Release # or Debug
 ```
 
 ## 6. Success
