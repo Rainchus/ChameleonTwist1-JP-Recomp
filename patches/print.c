@@ -6,7 +6,7 @@
 #define va_arg __builtin_va_arg
 #define va_end __builtin_va_end
 
-int dummyData = 0;
+int dummyData = 1;
 int dummyBss;
 
 void dummyFunc(void)
